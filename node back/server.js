@@ -13,13 +13,13 @@ const hook = new Webhook(process.env.DISCORD_URL);
 const webhook = new IncomingWebhook(process.env.SLACK_URL);
 const SlackBot = require("slackbots");
 
+//connection to database
 const db = mysql.createConnection({
   user: process.env.BD_USER,
   host: process.env.BD_HOST,
   password: process.env.BD_PASSWORD,
   database: process.env.BD_DATABASE,
 });
-
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
@@ -30,16 +30,19 @@ const io = socketIO(server, {
 });
 
 const PORT = process.env.PORT || 8080;
-
+//verifie si le serveur est en ligne
 io.on("connection", (socket) => {
+  //inscription
   socket.on("register", (data) => {
     console.log(data);
     if (data.username && data.password === data.confirm) {
+      //cryptage du mot de passe
       bcrypt.hash(data.password, 10, (err, hash) => {
         if (err) {
           console.log(err);
         } else {
           console.log(hash);
+          //enregistrement dans la base de données
           db.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
             [data.username, hash],
@@ -47,17 +50,20 @@ io.on("connection", (socket) => {
               if (err) throw err;
               if (result.affectedRows === 1) {
                 console.log("User create in");
+                //suivie de la connexion
                 db.execute(
                   "Select * from users where username = ? AND password = ?",
                   [data.username, hash],
                   (err, result) => {
                     if (err) throw err;
                     if (result.length > 0) {
+                      //envoie de la connexion
                       console.log("User logged in");
                       socket.emit("loginsucces", {
                         username: data.username,
                       });
                     } else {
+                      //erreur de connexion
                       console.log("loginfailed");
                       socket.emit("loginsucces", {
                         username: "",
@@ -66,6 +72,7 @@ io.on("connection", (socket) => {
                   }
                 );
               } else {
+                //erreur d'enregistrement
                 console.log("user not create");
                 socket.emit("loginsucces", {
                   username: "",
@@ -77,25 +84,29 @@ io.on("connection", (socket) => {
       });
     }
   });
-
+//connexion
   socket.on("login", (data) => {
     console.log(data);
+    
     if (data.username && data.password) {
-      console.log(data);
+
+//verifie si le pseudo existe
       db.execute(
         "Select * from users where username = ?",
         [data.username],
         (err, result) => {
           if (err) throw err;
           if (result.length > 0) {
-            console.log(result[0].password);
+            //decripte le mot de passe && verifie si le mot de passe est correct
             bcrypt.compare(data.password, result[0].password, (err, res) => {
               if (res) {
+                //envoie de la connexion
                 console.log("User logged in");
                 socket.emit("loginsucces", {
                   username: data.username,
                 });
               } else {
+                //erreur de connexion
                 console.log("loginfailed");
                 socket.emit("loginsucces", {
                   username: "",
@@ -103,6 +114,7 @@ io.on("connection", (socket) => {
               }
             });
           } else {
+            //erreur de connexion
             console.log("loginfailed");
             socket.emit("loginsucces", {
               username: "!inconnu",
@@ -111,21 +123,22 @@ io.on("connection", (socket) => {
         }
       );
     } else {
+      //erreur de connexion
       console.log("loginfailed");
       socket.emit("loginsucces", {
         username: "",
       });
     }
   });
-
+//changement de channel
   socket.on("create", (data) => {
     socket.join(data);
     console.log("User joined the channel " + data);
   });
-
+  //envoie de message
   socket.on("message", (data) => {
+    //envoi de msg vers slack
     if (data.channel === "slack") {
-      console.log(data);
       webhook.send(
         {
           username : data.username,
@@ -139,6 +152,7 @@ io.on("connection", (socket) => {
           }
         }
       );
+      //insertion dans la base de données
       db.execute(
         "INSERT INTO slacks (username, message, time ) VALUES (?,?,?)",
         [data.username, data.message, data.time],
@@ -153,6 +167,7 @@ io.on("connection", (socket) => {
           }
         }
       );
+      //envoi de msg vers discord
     } else if (data.channel === "discord") {
       hook.setUsername(data.username);
       hook.setAvatar(
@@ -165,8 +180,9 @@ io.on("connection", (socket) => {
             console.log("error", err);
           }
         };
-
+//insert msg dans la base de données
       db.execute(
+
         "INSERT INTO discord (username, message, time) VALUES (?, ?, ?)",
         [data.username, data.message, data.time],
         (err, result) => {
@@ -181,7 +197,7 @@ io.on("connection", (socket) => {
       );
     }
   });
-
+  //genere lhistorique sur slack
   socket.on("historique", (data) => {
     db.execute(
       "SELECT * FROM slacks WHERE username = ?",
@@ -198,6 +214,7 @@ io.on("connection", (socket) => {
         }
       }
     );
+//genere lhistorique sur discord
     db.execute(
       "SELECT * FROM discord WHERE username = ?",
       [data.username],
@@ -215,7 +232,12 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.on("disconnect", () => {});
+  //deconnexion
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
-server.listen(PORT, () => console.log(`Server listening to port ${PORT}`));
+//server.listen
+server.listen(PORT, () => 
+console.log(`Server listening to port ${PORT}`));
