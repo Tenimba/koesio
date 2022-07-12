@@ -19,18 +19,23 @@ function App() {
   const [messages, setMessages] = React.useState([]);
   const [channel, setChannel] = React.useState("");
   const [histo,sethisto] = React.useState(false);
-  const [historique , sethistorique] = React.useState([]);
+  const [discord , setdiscord] = React.useState([]);
+  const [slack, setslack] = React.useState([]);
 
 
   const Slack = (event) => {
     socket.emit("create", "slack");
     setMenu(true);
+    sethisto(false);
     setChannel("slack");
+
   };
   const Discord = (event) => {
     socket.emit("create", "discord");
     setMenu(true);
+    sethisto(false);
     setChannel("discord");
+  
   };
 
 
@@ -70,7 +75,7 @@ socket.on("loginsucces", (data) => {
   setConnexion(true);
   if (data.username === "") {
     setConnexion(false);
-    prompt("login ou mot de passe incorrect");
+    alert("login ou mot de passe incorrect");
   } else {
     setConnexion(true);
   }
@@ -79,7 +84,14 @@ socket.on("loginsucces", (data) => {
   }
 }
 );
+
   };
+socket.on('loginfailed',(data)=>{
+  console.log('failed');
+  setConnexion(false);
+  alert("login ou mot de passe incorrect");
+});
+
 const Historique = (event) => {
   event.preventDefault();
   console.log("historique");
@@ -88,8 +100,14 @@ const Historique = (event) => {
   });
   sethisto(true);
 
-  socket.on("historique_send", (data) => {
-    sethistorique(data.historique);
+  socket.on("historique_slack", (data) => {
+    console.log(data);
+setslack(data.historique);
+  }
+  );
+
+  socket.on("historique_discord", (data) => {
+    setdiscord(data.historique);
     console.log(data);
   }
   );
@@ -117,6 +135,21 @@ const Historique = (event) => {
       ];
       setText(messag.concat(text));
     });
+  };
+
+  const Disconnect = (event) => {
+    event.preventDefault();
+    setMenu(false);
+    setConnexion(false);
+socket.emit("disconnect", {
+  username: username,
+});
+  };
+  const Accueil = (event) => {
+    event.preventDefault();
+    setMenu(false);
+    setConnexion(true);
+    sethisto(false);
   };
 
  
@@ -186,7 +219,8 @@ const Historique = (event) => {
       <div className="menu">
         <li onClick={Slack}>Slack</li>
         <li onClick={Discord}>Discord</li>
-      
+        <li onClick={Historique}>historique</li>
+        <button onClick={Disconnect}>Deconnecter</button>
       </div>
     );
   } else if (connexion === true && menu === true && histo === false) {
@@ -199,6 +233,7 @@ const Historique = (event) => {
         </div>
 
         <div className="text-center name">
+        <button onClick={Disconnect}>Deconnecter</button>
           <em>
             Bienvenue {username} sur {channel}{" "}
           </em>
@@ -234,16 +269,38 @@ const Historique = (event) => {
   else if(histo === true){
     return(
       <div className="text-center name">
-      <h1>
-      voici l'historique de {username}
-      </h1>
+          <div className="menu">
+          <li onClick={Slack}>Slack</li>
+          <li onClick={Discord}>Discord</li>
+         
+        </div>
+        <button onClick={Disconnect}>Deconnecter</button>
+        <button onClick={Accueil}>Accueil</button>
+      <h3>
+      voici l'historique de {username}  sur slack
+      </h3>
       <table>
       <tr>
-      <th>message</th>
-      <th>channel</th>
-      <th>time</th>
+      <th>Message</th>
+      <th>Heure</th>
       </tr>
-      {historique.map((message, index) => (
+      {slack.map((message, index) => (
+        <tr key={index}>
+        <td>{message.message}</td>
+        <td>{message.channel}</td>
+        <td>{message.time}</td>
+        </tr>
+      ))}
+      </table>
+      <h3>
+      voici l'historique de {username}  sur discord
+      </h3>
+      <table>
+      <tr>
+      <th>Message</th>
+      <th>Heure</th>
+      </tr>
+      {discord.map((message, index) => (
         <tr key={index}>
         <td>{message.message}</td>
         <td>{message.channel}</td>
@@ -252,6 +309,7 @@ const Historique = (event) => {
       ))}
       </table>
     </div>
+
     )
   }
 }
