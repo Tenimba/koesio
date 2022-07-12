@@ -21,12 +21,14 @@ function App() {
   const [discord, setdiscord] = React.useState([]);
   const [slack, setslack] = React.useState([]);
 
+  //join channel slack
   const Slack = (event) => {
     socket.emit("create", "slack");
     setMenu(true);
     sethisto(false);
     setChannel("slack");
   };
+  //join channel discord
   const Discord = (event) => {
     socket.emit("create", "discord");
     setMenu(true);
@@ -34,15 +36,17 @@ function App() {
     setChannel("discord");
   };
 
+  // inscription
   const handlePseudo = (event) => {
     event.preventDefault();
-    console.log();
-    console.log("login: ", username, password, confirm);
+
+//inscription
     socket.emit("register", {
       username: username,
       password: password,
       confirm: confirm,
     });
+    //success or error
     socket.on("loginsucces", (data) => {
       console.log(data);
       setConnexion(true);
@@ -58,13 +62,15 @@ function App() {
     });
   };
 
+  //connexion
   const handleconnexion = (event) => {
     event.preventDefault();
-    console.log("login: ", username, password);
+//connexion
     socket.emit("login", {
       username: username,
       password: password,
     });
+    //success or error
     socket.on("loginsucces", (data) => {
       console.log(data);
       setConnexion(true);
@@ -91,6 +97,7 @@ function App() {
     alert("login ou mot de passe incorrect");
   });
 
+  //historique
   const Historique = (event) => {
     event.preventDefault();
     console.log("historique");
@@ -98,30 +105,31 @@ function App() {
       username: username,
     });
     sethisto(true);
-
+//historique slack
     socket.on("historique_slack", (data) => {
       console.log(data);
       setslack(data.historique);
     });
-
+//historique discord
     socket.on("historique_discord", (data) => {
       setdiscord(data.historique);
       console.log(data);
     });
   };
 
+  //message
   const handleMessage = (event) => {
     event.preventDefault();
+    //envoyer message
     socket.emit("message", {
       message: message,
       channel: channel,
       username: username,
       time: time,
     });
-    console.log(message, channel, username, time);
 
+    //recuperer message
     socket.on("message_send", (data) => {
-      console.log(data.username);
       var messag = [
         {
           username: data.username,
@@ -134,6 +142,7 @@ function App() {
     });
   };
 
+  // deconnection
   const Disconnect = (event) => {
     event.preventDefault();
     setMenu(false);
@@ -143,13 +152,14 @@ function App() {
       username: username,
     });
   };
+  //retour a l'accueil
   const Accueil = (event) => {
     event.preventDefault();
     setMenu(false);
     setConnexion(true);
     sethisto(false);
   };
-
+//verifcation de la connexion
   if (connexion === false) {
     return (
       <div className="entre">
@@ -211,6 +221,7 @@ function App() {
         </div>
       </div>
     );
+    //connectez 
   } else if (connexion === true && menu === false) {
     return (
       <div>
@@ -226,6 +237,7 @@ function App() {
         </div>
       </div>
     );
+    //connectez && menu select channel
   } else if (connexion === true && menu === true && histo === false) {
     return (
       <div className="affichage">
@@ -283,6 +295,7 @@ function App() {
         </div>
       </div>
     );
+    //affichage historique
   } else if (histo === true) {
     return (
       <div className=" name">
