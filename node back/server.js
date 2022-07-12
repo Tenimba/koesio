@@ -5,18 +5,19 @@ const bodyParser = require("body-parser");
 const pino = require("express-pino-logger")();
 const socketIO = require("socket.io");
 const mysql = require("mysql2");
-const {Webhook, MessageBuilder} = require("discord-webhook-node");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
+const { Webhook, MessageBuilder } = require("discord-webhook-node");
 const { IncomingWebhook } = require("@slack/client");
-const discord_url = `${process.env.DISCORD_URL}`;
-const hook = new Webhook(discord_url);
-const slack_url = `${process.env.SLACK_URL}`;
-const webhook = new IncomingWebhook(slack_url);
+const hook = new Webhook(process.env.DISCORD_URL);
+const webhook = new IncomingWebhook(process.env.SLACK_URL);
+const SlackBot = require("slackbots");
 
 const db = mysql.createConnection({
-  user: "tenimba",
-  host: "localhost",
-  password: "Tenimba!123",
-  database: "keosio",
+  user: process.env.BD_USER,
+  host: process.env.BD_HOST,
+  password: process.env.BD_PASSWORD,
+  database: process.env.BD_DATABASE,
 });
 
 const app = express();
@@ -31,24 +32,65 @@ const io = socketIO(server, {
 const PORT = process.env.PORT || 8080;
 
 io.on("connection", (socket) => {
-
-
   socket.on("register", (data) => {
     console.log(data);
-    if(data.password === data.confirm){
-    db.execute(
-      "INSERT INTO users (username, password) VALUES (?, ?)",
-      [data.username, data.password],
-      (err, result) => {
-        if (err) throw err;
-        if (result.affectedRows === 1) {
-          console.log("User create in");
+    if (data.username && data.password === data.confirm) {
+      bcrypt.hash(data.password, 10, (err, hash) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(hash);
           db.execute(
-            "Select * from users where username = ? AND password = ?",
-            [data.username, data.password],
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            [data.username, hash],
             (err, result) => {
               if (err) throw err;
-              if (result.length > 0) {
+              if (result.affectedRows === 1) {
+                console.log("User create in");
+                db.execute(
+                  "Select * from users where username = ? AND password = ?",
+                  [data.username, hash],
+                  (err, result) => {
+                    if (err) throw err;
+                    if (result.length > 0) {
+                      console.log("User logged in");
+                      socket.emit("loginsucces", {
+                        username: data.username,
+                      });
+                    } else {
+                      console.log("loginfailed");
+                      socket.emit("loginsucces", {
+                        username: "",
+                      });
+                    }
+                  }
+                );
+              } else {
+                console.log("user not create");
+                socket.emit("loginsucces", {
+                  username: "",
+                });
+              }
+            }
+          );
+        }
+      });
+    }
+  });
+
+  socket.on("login", (data) => {
+    console.log(data);
+    if (data.username && data.password) {
+      console.log(data);
+      db.execute(
+        "Select * from users where username = ?",
+        [data.username],
+        (err, result) => {
+          if (err) throw err;
+          if (result.length > 0) {
+            console.log(result[0].password);
+            bcrypt.compare(data.password, result[0].password, (err, res) => {
+              if (res) {
                 console.log("User logged in");
                 socket.emit("loginsucces", {
                   username: data.username,
@@ -59,37 +101,21 @@ io.on("connection", (socket) => {
                   username: "",
                 });
               }
-            }
-          );;
-   
-        } else {
-          console.log("user not create");
-
+            });
+          } else {
+            console.log("loginfailed");
+            socket.emit("loginsucces", {
+              username: "!inconnu",
+            });
+          }
         }
-      }
-    );
+      );
+    } else {
+      console.log("loginfailed");
+      socket.emit("loginsucces", {
+        username: "",
+      });
     }
-  });
-
-  socket.on("login", (data) => {
-    db.execute(
-      "Select * from users where username = ? AND password = ?",
-      [data.username, data.password],
-      (err, result) => {
-        if (err) throw err;
-        if (result.length > 0) {
-          console.log("User logged in");
-          socket.emit("loginsucces", {
-            username: data.username,
-          });
-        } else {
-          console.log("loginfailed");
-          socket.emit("loginsucces", {
-            username: "",
-          });
-        }
-      }
-    );
   });
 
   socket.on("create", (data) => {
@@ -99,14 +125,20 @@ io.on("connection", (socket) => {
 
   socket.on("message", (data) => {
     if (data.channel === "slack") {
-      webhook.setUsername(data.username);
-     webhook.setAvatar('https://homepages.cae.wisc.edu/~ece533/images/airplane.png')
-      webhook.send(data.message, function (err, res) {
-        console.log(data);
-        if (err) {
-          console.log("error", err);
+      console.log(data);
+      webhook.send(
+        {
+          username : data.username,
+          text: data.message,
+        },
+        (err, res) => {},
+        function (err, res) {
+          console.log(data);
+          if (err) {
+            console.log("error", err);
+          }
         }
-      });
+      );
       db.execute(
         "INSERT INTO slacks (username, message, time ) VALUES (?,?,?)",
         [data.username, data.message, data.time],
@@ -122,15 +154,17 @@ io.on("connection", (socket) => {
         }
       );
     } else if (data.channel === "discord") {
-    
-      hook.setUsername(data.username)
-      hook.setAvatar('https://homepages.cae.wisc.edu/~ece533/images/airplane.png')
-      hook.send(data.message), function (err, res) {
-        console.log(data);
-        if (err) {
-          console.log("error", err);
-        }
-      };
+      hook.setUsername(data.username);
+      hook.setAvatar(
+        "https://homepages.cae.wisc.edu/~ece533/images/airplane.png"
+      );
+      hook.send(data.message),
+        function (err, res) {
+          console.log(data);
+          if (err) {
+            console.log("error", err);
+          }
+        };
 
       db.execute(
         "INSERT INTO discord (username, message, time) VALUES (?, ?, ?)",
@@ -179,7 +213,7 @@ io.on("connection", (socket) => {
         }
       }
     );
-    });                                    
+  });
 
   socket.on("disconnect", () => {});
 });
