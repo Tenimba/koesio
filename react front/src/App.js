@@ -3,7 +3,6 @@ import socketClient from "socket.io-client";
 import "./App.css";
 const server = "http://localhost:8080";
 
-
 function App() {
   var socket = socketClient(server);
   socket.on("connect", function () {});
@@ -18,26 +17,22 @@ function App() {
   const [text, setText] = React.useState([]);
   const [messages, setMessages] = React.useState([]);
   const [channel, setChannel] = React.useState("");
-  const [histo,sethisto] = React.useState(false);
-  const [discord , setdiscord] = React.useState([]);
+  const [histo, sethisto] = React.useState(false);
+  const [discord, setdiscord] = React.useState([]);
   const [slack, setslack] = React.useState([]);
-
 
   const Slack = (event) => {
     socket.emit("create", "slack");
     setMenu(true);
     sethisto(false);
     setChannel("slack");
-
   };
   const Discord = (event) => {
     socket.emit("create", "discord");
     setMenu(true);
     sethisto(false);
     setChannel("discord");
-  
   };
-
 
   const handlePseudo = (event) => {
     event.preventDefault();
@@ -53,7 +48,7 @@ function App() {
       setConnexion(true);
       if (data.username === "") {
         setConnexion(false);
-        prompt("pseudo ou mot de passe non valide");
+        alert("pseudo ou mot de passe non valide");
       } else {
         setConnexion(true);
       }
@@ -66,52 +61,54 @@ function App() {
   const handleconnexion = (event) => {
     event.preventDefault();
     console.log("login: ", username, password);
-socket.emit("login", {
-  username: username,
-  password: password,
-});
-socket.on("loginsucces", (data) => {
-  console.log(data);
-  setConnexion(true);
-  if (data.username === "") {
+    socket.emit("login", {
+      username: username,
+      password: password,
+    });
+    socket.on("loginsucces", (data) => {
+      console.log(data);
+      setConnexion(true);
+      if (data.username === "") {
+        setConnexion(false);
+        alert("login ou mot de passe incorrect");
+       } else if (data.username == "!inconnu") {
+        setConnexion(false);
+ alert("utilisateur inconnu merci de vous inscrire avant de vous connecter");
+
+       } else {
+        setConnexion(true);
+      }
+
+      if (connexion === true) {
+        console.log("connexion");
+      }
+
+    });
+  };
+  socket.on("loginfailed", (data) => {
+    console.log("failed");
     setConnexion(false);
     alert("login ou mot de passe incorrect");
-  } else {
-    setConnexion(true);
-  }
-  if (connexion === true) {
-    console.log("connexion");
-  }
-}
-);
-
-  };
-socket.on('loginfailed',(data)=>{
-  console.log('failed');
-  setConnexion(false);
-  alert("login ou mot de passe incorrect");
-});
-
-const Historique = (event) => {
-  event.preventDefault();
-  console.log("historique");
-  socket.emit("historique", {
-    username: username,
   });
-  sethisto(true);
 
-  socket.on("historique_slack", (data) => {
-    console.log(data);
-setslack(data.historique);
-  }
-  );
+  const Historique = (event) => {
+    event.preventDefault();
+    console.log("historique");
+    socket.emit("historique", {
+      username: username,
+    });
+    sethisto(true);
 
-  socket.on("historique_discord", (data) => {
-    setdiscord(data.historique);
-    console.log(data);
-  }
-  );
-}
+    socket.on("historique_slack", (data) => {
+      console.log(data);
+      setslack(data.historique);
+    });
+
+    socket.on("historique_discord", (data) => {
+      setdiscord(data.historique);
+      console.log(data);
+    });
+  };
 
   const handleMessage = (event) => {
     event.preventDefault();
@@ -141,9 +138,10 @@ setslack(data.historique);
     event.preventDefault();
     setMenu(false);
     setConnexion(false);
-socket.emit("disconnect", {
-  username: username,
-});
+    setText([]);
+    socket.emit("disconnect", {
+      username: username,
+    });
   };
   const Accueil = (event) => {
     event.preventDefault();
@@ -152,14 +150,13 @@ socket.emit("disconnect", {
     sethisto(false);
   };
 
- 
   if (connexion === false) {
     return (
-      <div className="flex justify-center text-center p-5 solid">
+      <div className="entre">
+        <h1 className="bienvenu">Bienvenue </h1>
         <div className="inscription">
-          <h1>Bienvenue </h1>
           <div className="p-8">
-            <span className="label">Inscription</span>
+            <h3 className="label">Inscription</h3>
           </div>
           <form>
             <label>
@@ -183,14 +180,14 @@ socket.emit("disconnect", {
                 onChange={(e) => setConfirm(e.target.value)}
               />
             </label>
+            <br />
             <button className="button" onClick={handlePseudo}>
-              Se connecter
+              S'inscrire
             </button>
           </form>
         </div>
-<div className="connexion">
-<span className="label">connexion</span>
-         
+        <div className="connexion">
+          <h3 className="label">connexion</h3>
           <form>
             <label>
               <p>Username</p>
@@ -206,24 +203,15 @@ socket.emit("disconnect", {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
+            <br />
             <button className="button" onClick={handleconnexion}>
               Se connecter
             </button>
           </form>
-          </div>
+        </div>
       </div>
     );
-    
   } else if (connexion === true && menu === false) {
-    return (
-      <div className="menu">
-        <li onClick={Slack}>Slack</li>
-        <li onClick={Discord}>Discord</li>
-        <li onClick={Historique}>historique</li>
-        <button onClick={Disconnect}>Deconnecter</button>
-      </div>
-    );
-  } else if (connexion === true && menu === true && histo === false) {
     return (
       <div>
         <div className="menu">
@@ -231,86 +219,129 @@ socket.emit("disconnect", {
           <li onClick={Discord}>Discord</li>
           <li onClick={Historique}>historique</li>
         </div>
-
-        <div className="text-center name">
-        <button onClick={Disconnect}>Deconnecter</button>
-          <em>
-            Bienvenue {username} sur {channel}{" "}
-          </em>
+        <div>
+          <button className="deconnect" onClick={Disconnect}>
+            Deconnecter
+          </button>
         </div>
-
-        <div >
-          <div className="border">
-            {text.map((message, index) => (
-              <div key={index}>
-                <div> user :{message.username} </div>
-                <div> message : {message.message} </div>
-                <div> envoyer a {message.time} </div>
-                <div> envoyer vers : {message.channel} </div>
-                <br />
-              </div>
-            ))}
-          </div>
-        </div>
-        <form>
-          <label>
-            <p> taper votre message</p>
-            <textarea
-              type="text"
-              onChange={(e) => setMessage(e.target.value)}
-            />
-          </label>
-          <br />
-          <button onClick={handleMessage}>Send</button>
-        </form>
       </div>
     );
-  }
-  else if(histo === true){
-    return(
-      <div className="text-center name">
-          <div className="menu">
+  } else if (connexion === true && menu === true && histo === false) {
+    return (
+      <div className="affichage">
+        <div className="menu">
           <li onClick={Slack}>Slack</li>
           <li onClick={Discord}>Discord</li>
-         
+          <li onClick={Historique}>historique</li>
+          <li onClick={Accueil}>Accueil</li>
         </div>
-        <button onClick={Disconnect}>Deconnecter</button>
-        <button onClick={Accueil}>Accueil</button>
-      <h3>
-      voici l'historique de {username}  sur slack
-      </h3>
-      <table>
-      <tr>
-      <th>Message</th>
-      <th>Heure</th>
-      </tr>
-      {slack.map((message, index) => (
-        <tr key={index}>
-        <td>{message.message}</td>
-        <td>{message.channel}</td>
-        <td>{message.time}</td>
-        </tr>
-      ))}
-      </table>
-      <h3>
-      voici l'historique de {username}  sur discord
-      </h3>
-      <table>
-      <tr>
-      <th>Message</th>
-      <th>Heure</th>
-      </tr>
-      {discord.map((message, index) => (
-        <tr key={index}>
-        <td>{message.message}</td>
-        <td>{message.channel}</td>
-        <td>{message.time}</td>
-        </tr>
-      ))}
-      </table>
-    </div>
 
-    )
+        <div>
+          <button className="deconnect" onClick={Disconnect}>
+            Deconnecter
+          </button>
+        </div>
+        <h2 className="name">
+          Bienvenue <u> {username} </u>  sur <em> {channel}</em>
+        </h2>
+
+        <div className="message">
+          <div>
+            <div className="border">
+              {text.map((message, index) => (
+                <div key={index}>
+        
+                  <div>
+                    {" "}
+                    <em className="user">message : </em> {message.message}{" "}
+                  </div>
+                  <div>
+                    {" "}
+                    <em className="user">envoyer a </em> {message.time}{" "}
+                  </div>
+                  <div>
+                    {" "}
+                    <em className="user"> envoyer vers : </em> {message.channel}{" "}
+                  </div>
+                  <br />
+                </div>
+              ))}
+            </div>
+          </div>
+          <form className="msg">
+            <label>
+              <textarea
+                type="text"
+                className="text"
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </label>
+            <button className="send" onClick={handleMessage}>
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  } else if (histo === true) {
+    return (
+      <div className=" name">
+        <div className="menu">
+          <li onClick={Slack}>Slack</li>
+          <li onClick={Discord}>Discord</li>
+          <li onClick={Accueil}>Accueil</li>
+        </div>
+
+        <button className="deconnect" onClick={Disconnect}>
+          Deconnecter
+        </button>
+        <button className="acceuil" onClick={Accueil}>
+          Accueil
+        </button>
+        <br />
+        <div className="historique">
+          <table>
+            <td colspan={2} rowSpan={1}>
+              {" "}
+              <h3>
+                {" "}
+                voici l'historique de <em>{username}</em> sur slack{" "}
+              </h3>
+              </td>
+            <tr>
+              <th>Message</th>
+              <th>Heure</th>
+            </tr>
+            {slack.map((message, index) => (
+              <tr key={index}>
+                <td>{message.message}</td>
+                <td>{message.time}</td>
+              </tr>
+            ))}
+          </table>
+          <h3 className="title"></h3>
+          <table>
+            <td colspan={2} rowSpan={1}>
+              {" "}
+              <h3>
+                {" "}
+                voici l'historique de <em>{username}</em> sur discord{" "}
+              </h3>
+            </td>
+            <tr>
+              <th>Message</th>
+              <th>Heure</th>
+            </tr>
+            {discord.map((message, index) => (
+              <tr key={index}>
+                <td>{message.message}</td>
+                <td>{message.time}</td>
+              </tr>
+            ))}
+          </table>
+        </div>
+      </div>
+    );
   }
 }
 
