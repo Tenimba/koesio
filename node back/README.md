@@ -1,16 +1,19 @@
-pour le back vous aurez besoin 
+Pour le back vous aurez besoin 
 
 1."npm init"
 2."npm i -s express"  
- pour cree le dossier initial de node 
-3. cree un fichier .env a la racine de votre dossier et completer le avec les information de connexion a votre bd sql
+ Pour créer le dossier initial de node 
+ 
+3. Crée un fichier.env a la racine de votre dossier et compléter le, avec les informations de connexion a votre bd SQL
 
-4.pour slack : ajouter "WEBHOOK entrant" a votre serveur et copier sont url dans SLACK_URL 
+4.Pour Slack : ajouter "WEBHOOK entrant" à votre serveur et copier sont URL dans SLACK_URL 
 
-5. pour discord dans les parametre de votre serveur: dans integration ajouter un webhook et copier sont url dans DISCORD_URL
+5. Pour discord dans les paramètres de votre serveur : dans "intégration" ajouter un webhook et copier sont URL dans DISCORD_URL
 
-votre fichier doit resemblez au fichier .envexemple fourni 
+Votre fichier doit ressembler au fichier envexemple fourni
 
-une fois cella terminer 
+Une fois cela terminer
 
-il suffira de faire "node server.js" 
+Il suffira de faire "node server.js"
+
+Il devra ce lancer sur le port 8000. (ceci est important pour une bonne connexion avec le front.)
