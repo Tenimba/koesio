@@ -5,14 +5,12 @@ const bodyParser = require("body-parser");
 const pino = require("express-pino-logger")();
 const socketIO = require("socket.io");
 const mysql = require("mysql2");
-const {Webhook} = require("discord-webhook-node");
+const {Webhook, MessageBuilder} = require("discord-webhook-node");
 const { IncomingWebhook } = require("@slack/client");
-const hook = new Webhook(
-  "https://discord.com/api/webhooks/996100194372419755/fvloelnmNuYcvw3WJH5IJTtz6qBWeH9dnoECjwu_DKQx8_KM41tMMN-rhegmCC-6rV9v"
-);
-const url =
-  "https://hooks.slack.com/services/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";
-const webhook = new IncomingWebhook(url);
+const discord_url = `${process.env.DISCORD_URL}`;
+const hook = new Webhook(discord_url);
+const slack_url = `${process.env.SLACK_URL}`;
+const webhook = new IncomingWebhook(slack_url);
 
 const db = mysql.createConnection({
   user: "tenimba",
@@ -45,10 +43,24 @@ io.on("connection", (socket) => {
         if (err) throw err;
         if (result.affectedRows === 1) {
           console.log("User create in");
-         socket.emit('login', {
-            username: data.username,
-            password: data.password,
-            });
+          db.execute(
+            "Select * from users where username = ? AND password = ?",
+            [data.username, data.password],
+            (err, result) => {
+              if (err) throw err;
+              if (result.length > 0) {
+                console.log("User logged in");
+                socket.emit("loginsucces", {
+                  username: data.username,
+                });
+              } else {
+                console.log("loginfailed");
+                socket.emit("loginsucces", {
+                  username: "",
+                });
+              }
+            }
+          );;
    
         } else {
           console.log("user not create");
@@ -71,8 +83,8 @@ io.on("connection", (socket) => {
             username: data.username,
           });
         } else {
-          console.log("login failed");
-          socket.emit("loginechec", {
+          console.log("loginfailed");
+          socket.emit("loginsucces", {
             username: "",
           });
         }
@@ -87,6 +99,8 @@ io.on("connection", (socket) => {
 
   socket.on("message", (data) => {
     if (data.channel === "slack") {
+      webhook.setUsername(data.username);
+     webhook.setAvatar('https://homepages.cae.wisc.edu/~ece533/images/airplane.png')
       webhook.send(data.message, function (err, res) {
         console.log(data);
         if (err) {
@@ -108,12 +122,15 @@ io.on("connection", (socket) => {
         }
       );
     } else if (data.channel === "discord") {
-      hook.send(data.message, function (err, res) {
+    
+      hook.setUsername(data.username)
+      hook.setAvatar('https://homepages.cae.wisc.edu/~ece533/images/airplane.png')
+      hook.send(data.message), function (err, res) {
         console.log(data);
         if (err) {
           console.log("error", err);
         }
-      });
+      };
 
       db.execute(
         "INSERT INTO discord (username, message, time) VALUES (?, ?, ?)",
@@ -139,7 +156,7 @@ io.on("connection", (socket) => {
         console.log(result);
         if (err) throw err;
         if (result.length > 0) {
-          socket.emit("historique_send", {
+          socket.emit("historique_slack", {
             username: data.username,
             channel: "slack",
             historique: result,
@@ -154,7 +171,7 @@ io.on("connection", (socket) => {
         console.log(result);
         if (err) throw err;
         if (result.length > 0) {
-          socket.emit("historique_send", {
+          socket.emit("historique_discord", {
             username: data.username,
             channel: "discord",
             historique: result,
