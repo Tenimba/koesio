@@ -1,9 +1,16 @@
-# keosio
-VOICI UNE REPONSE A LA PROBLEMATIQUE SUIVANTE.
-"Développer une solution technique permettant à un utilisateur d'envoyer un message sur ses différents réseaux sociaux."
+pour le back vous aurez besoin 
 
-Cette solution est en reactjs en front et nodejs en back.
+1."npm init"
+2."npm i -s express"  
+ pour cree le dossier initial de node 
+3. cree un fichier .env a la racine de votre dossier et completer le avec les information de connexion a votre bd sql
 
-elle permetra a sont utilisateur apres s'etre connecter d'envoyer un msg vers votre reseaux SLACK ou Discord.
+4.pour slack : ajouter "WEBHOOK entrant" a votre serveur et copier sont url dans SLACK_URL 
 
-nhesitez pas a rentre dans les dossiers pour trouvez d'une notice pour le front ou le back
+5. pour discord dans les parametre de votre serveur: dans integration ajouter un webhook et copier sont url dans DISCORD_URL
+
+votre fichier doit resemblez au fichier .envexemple fourni 
+
+une fois cella terminer 
+
+il suffira de faire "node server.js" 
