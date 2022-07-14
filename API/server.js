@@ -15,10 +15,10 @@ const SlackBot = require("slackbots");
 
 //connection to database
 const db = mysql.createConnection({
-  user: "tenimba",
-  host: "localhost",
-  password:"tenimba!123",
-  database: "koesio",
+  user: process.env.BD_USER,
+  host: process.env.BD_HOST,
+  password: process.env.BD_PASSWORD,
+  database: process.env.BD_DATABASE,
 });
 const app = express();
 app.use(cors());
@@ -243,4 +243,3 @@ server.listen(PORT, () => {
   console.log("Server is running on port " + PORT);
 }
 );
-
