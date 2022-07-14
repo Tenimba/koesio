@@ -21,7 +21,6 @@ function App() {
   const [histo, sethisto] = React.useState(false);
   const [discord, setdiscord] = React.useState([]);
   const [slack, setslack] = React.useState([]);
-  const [heure, setHeure] = React.useState('');
 
   //join channel slack
   const Slack = (event) => {
@@ -128,7 +127,7 @@ function App() {
       channel: channel,
       username: username,
       time: time,
-      heure : heure
+
     });
 
     //recuperer message
@@ -293,11 +292,6 @@ function App() {
                     {" "}
                     <em className="user"> envoyer vers : </em> {message.channel}{" "}
                   </div>
-                  <div>
-                    {" "}
-                    <em className="user"> heure defini sur  : </em> {message.heure}{" "}
-                  </div>
-                  <br />
                 </div>
               ))}
             </div>
@@ -309,10 +303,6 @@ function App() {
                 className="text"
                 onChange={(e) => setMessage(e.target.value)}
               />
-              <label className="horraire">
-                <input type="timestamp" onChange={(e) => setMessage(e.target.value)} />
-                </label>
-                
             </label>
             <button className="send" onClick={handleMessage}>
               Send
@@ -391,3 +381,4 @@ function App() {
 }
 
 export default App;
+

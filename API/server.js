@@ -173,7 +173,6 @@ io.on("connection", (socket) => {
       hook.setAvatar(
         "https://homepages.cae.wisc.edu/~ece533/images/airplane.png"
       );
-      hook.timestamp(data.heure);
       hook.send(data.message),
         function (err, res) {
           console.log(data);
@@ -244,3 +243,4 @@ server.listen(PORT, () => {
   console.log("Server is running on port " + PORT);
 }
 );
+
