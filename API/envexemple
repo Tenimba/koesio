@@ -1,0 +1,9 @@
+// discord serveur url 
+DISCORD_URL = "***";
+// slack serveur url
+SLACK_URL = "***";
+//data base 
+BD_USER =  "**",
+BD_HOST =  "**",
+BD_PASSWORD =  "**",
+BD_DATABASE = "**";
